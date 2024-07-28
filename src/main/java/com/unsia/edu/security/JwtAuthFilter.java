@@ -1,6 +1,5 @@
 package com.unsia.edu.security;
 
-import com.unsia.edu.services.EntityCredentialService;
 import com.unsia.edu.services.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

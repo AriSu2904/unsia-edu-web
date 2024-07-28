@@ -1,7 +1,7 @@
 package com.unsia.edu.controllers;
 
 import com.unsia.edu.models.common.CommonResponse;
-import com.unsia.edu.models.request.LoginRequest;
+import com.unsia.edu.models.request.AuthenticationRequest;
 import com.unsia.edu.models.request.RegisterRequest;
 import com.unsia.edu.models.response.AuthenticationResponse;
 import com.unsia.edu.models.response.RegisterResponse;
@@ -32,9 +32,26 @@ public class AuthController {
                 .build());
     }
 
+    @PostMapping("/register-admin")
+    public ResponseEntity<CommonResponse<RegisterResponse>> registerAdmin(@RequestBody RegisterRequest request) {
+        RegisterResponse registerResponse = authService.registerAdmin(request);
+
+        return ResponseEntity.ok(CommonResponse.<RegisterResponse>builder()
+                .statusCode(HttpStatus.OK.value())
+                .message("Successfully Register!")
+                .data(registerResponse)
+                .build());
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<CommonResponse<AuthenticationResponse>> register(@RequestBody LoginRequest request) {
-    return null;
+    public ResponseEntity<CommonResponse<AuthenticationResponse>> register(@RequestBody AuthenticationRequest request) {
+        AuthenticationResponse userLogin = authService.login(request);
+
+       return ResponseEntity.ok(CommonResponse.<AuthenticationResponse>builder()
+                       .statusCode(HttpStatus.OK.value())
+                       .message("Successfully Login!")
+                       .data(userLogin)
+               .build());
     }
 
 }

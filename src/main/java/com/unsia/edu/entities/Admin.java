@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "m_users")
-public class User {
+@Table(name = "m_admins")
+public class Admin {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
@@ -22,8 +22,6 @@ public class User {
     private String lastName;
     @Column(name = "email", unique = true)
     private String email;
-    @Column(name = "phone_number", nullable = false, unique = true)
-    private String phoneNumber;
     @OneToOne
     private EntityCredential credential;
 }

@@ -4,7 +4,10 @@ import com.unsia.edu.entities.EntityCredential;
 import com.unsia.edu.entities.constant.ERole;
 import com.unsia.edu.repositories.EntityCredentialRepository;
 import com.unsia.edu.services.EntityCredentialService;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +21,9 @@ public class EntityCredentialServiceImpl implements EntityCredentialService {
 
     @Override
     public EntityCredential createCredential(String email, String password, ERole role) {
+        EntityCredential existCredential = this.findByEmail(email);
+        if(existCredential != null) throw new DuplicateKeyException("Email already exist");
+
         String encryptedPassword = bcrypt.encode(password);
 
         EntityCredential entityCredential = new EntityCredential();
@@ -26,6 +32,11 @@ public class EntityCredentialServiceImpl implements EntityCredentialService {
         entityCredential.setRole(role);
 
         return entityCredentialRepository.save(entityCredential);
+    }
+
+    @Override
+    public EntityCredential findByEmail(String email) {
+        return entityCredentialRepository.findByEmail(email).orElse(null);
     }
 }
 

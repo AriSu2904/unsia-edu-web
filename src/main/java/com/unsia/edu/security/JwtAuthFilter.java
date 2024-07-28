@@ -29,18 +29,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwtToken = jwtService.parseJwt(request);
-            String email = jwtService.extractEmail(jwtToken);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            if(jwtToken != null && jwtService.isTokenValid(jwtToken, userDetails)) {
-                UsernamePasswordAuthenticationToken authenticateToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities()
-                        );
-                authenticateToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authenticateToken);
+            if(jwtToken != null) {
+                String generatedEmail = jwtService.extractEmail(jwtToken);
+                if (jwtService.isTokenValid(jwtToken, userDetailsService.loadUserByUsername(generatedEmail))) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(generatedEmail);
+                    UsernamePasswordAuthenticationToken authenticateToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                    authenticateToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authenticateToken);
+                }
             }
         }catch (Exception error) {
-            System.out.println(error.getMessage());
+            System.out.println("ARI Error occured: " + error);
         }
         filterChain.doFilter(request, response);
     }

@@ -1,6 +1,5 @@
-package com.unsia.edu.config;
+package com.unsia.edu.security;
 
-import com.unsia.edu.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

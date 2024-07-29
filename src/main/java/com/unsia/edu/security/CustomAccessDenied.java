@@ -3,7 +3,6 @@ package com.unsia.edu.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unsia.edu.models.common.CommonResponse;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,7 @@ public class CustomAccessDenied implements AccessDeniedHandler {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException {
         CommonResponse<Object> commonResponse = CommonResponse.builder()
                 .errors(accessDeniedException.getMessage())
                 .build();

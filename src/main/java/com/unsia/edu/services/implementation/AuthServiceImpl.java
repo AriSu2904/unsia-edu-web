@@ -8,7 +8,6 @@ import com.unsia.edu.models.request.AuthenticationRequest;
 import com.unsia.edu.models.request.RegisterRequest;
 import com.unsia.edu.models.response.AuthenticationResponse;
 import com.unsia.edu.models.response.RegisterResponse;
-import com.unsia.edu.repositories.EntityCredentialRepository;
 import com.unsia.edu.services.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,6 @@ import com.unsia.edu.utils.ValidationUtil;
 public class AuthServiceImpl implements AuthService {
     private final EntityCredentialService entityCredentialService;
     private final UserService userService;
-    private final EntityCredentialRepository entityCredentialRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final AdminService adminService;

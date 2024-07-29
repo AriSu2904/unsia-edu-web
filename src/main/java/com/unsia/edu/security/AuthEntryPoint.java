@@ -2,7 +2,6 @@ package com.unsia.edu.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unsia.edu.models.common.CommonResponse;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,7 @@ public class AuthEntryPoint implements AuthenticationEntryPoint {
     private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
         CommonResponse<Object> commonResponse = CommonResponse.builder()
                 .errors(authException.getMessage())
                 .build();

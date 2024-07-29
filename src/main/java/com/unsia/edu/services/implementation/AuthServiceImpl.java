@@ -10,7 +10,9 @@ import com.unsia.edu.models.response.AuthenticationResponse;
 import com.unsia.edu.models.response.RegisterResponse;
 import com.unsia.edu.repositories.EntityCredentialRepository;
 import com.unsia.edu.services.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,9 +20,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.unsia.edu.utils.ValidationUtil;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackOn = Exception.class)
 public class AuthServiceImpl implements AuthService {
     private final EntityCredentialService entityCredentialService;
     private final UserService userService;
@@ -28,63 +32,75 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final AdminService adminService;
+    private final ValidationUtil validationUtil;
 
     @Override
     public RegisterResponse registerUser(RegisterRequest request) {
-        EntityCredential userCredential = entityCredentialService
-                .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_USER);
+        validationUtil.validate(request);
 
-        User user = User.builder()
-                .email(userCredential.getEmail())
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .phoneNumber(request.getPhoneNumber())
-                .credential(userCredential)
-                .build();
+       try {
+           EntityCredential userCredential = entityCredentialService
+                   .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_USER);
 
-        userService.createUser(user);
+           User user = User.builder()
+                   .email(userCredential.getEmail())
+                   .firstName(request.getFirstName())
+                   .lastName(request.getLastName())
+                   .phoneNumber(request.getPhoneNumber())
+                   .credential(userCredential)
+                   .build();
 
-        return RegisterResponse.builder()
-                .email(request.getEmail())
-                .build();
+           userService.createUser(user);
+
+           return RegisterResponse.builder()
+                   .email(request.getEmail())
+                   .build();
+       }catch (DataIntegrityViolationException e) {
+           throw new ResponseStatusException(HttpStatus.CONFLICT, "email already registered!");       }
     }
 
     @Override
     public RegisterResponse registerAdmin(RegisterRequest request) {
-        EntityCredential userCredential = entityCredentialService
-                .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_ADMIN);
+        validationUtil.validate(request);
 
-        Admin newAdmin = Admin.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(userCredential.getEmail())
-                .credential(userCredential)
-                .build();
+       try {
+           EntityCredential userCredential = entityCredentialService
+                   .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_ADMIN);
 
-        adminService.createAdmin(newAdmin);
+           Admin newAdmin = Admin.builder()
+                   .email(userCredential.getEmail())
+                   .credential(userCredential)
+                   .build();
 
-        return RegisterResponse.builder()
-                .email(request.getEmail())
-                .build();
+           adminService.createAdmin(newAdmin);
+
+           return RegisterResponse.builder()
+                   .email(request.getEmail())
+                   .build();
+       }catch (DataIntegrityViolationException exception) {
+           throw new ResponseStatusException(HttpStatus.CONFLICT, "email already registered!");
+       }
     }
 
     @Override
     public AuthenticationResponse login(AuthenticationRequest request) {
+        validationUtil.validate(request);
 
         try {
-            Authentication authenticated = authenticationManager.authenticate(
+            Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            SecurityContextHolder.getContext().setAuthentication(authenticated);
 
-            EntityCredential entityCredential = entityCredentialRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Credentials!"));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            String userToken = jwtService.generateToken(entityCredential);
+            EntityCredential credential = (EntityCredential) authentication.getPrincipal();
+
+            String token = jwtService.generateToken(credential);
+
             return AuthenticationResponse.builder()
-                    .email(entityCredential.getEmail())
-                    .role(entityCredential.getRole().name())
-                    .token(userToken)
+                    .email(credential.getEmail())
+                    .token(token)
+                    .role(credential.getRole().name())
                     .build();
         }catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect Email or Password!");

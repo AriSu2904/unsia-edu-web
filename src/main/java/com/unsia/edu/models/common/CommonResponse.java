@@ -7,7 +7,6 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class CommonResponse <T> {
-    private Integer statusCode;
-    private String message;
+    private Object errors;
     private T data;
 }

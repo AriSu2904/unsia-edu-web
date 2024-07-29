@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "m_credentials")
+@Table(name = "m_credential")
 public class EntityCredential implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

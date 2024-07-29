@@ -25,33 +25,32 @@ public class AuthController {
     public ResponseEntity<CommonResponse<RegisterResponse>> register(@RequestBody RegisterRequest request) {
         RegisterResponse registerResponse = authService.registerUser(request);
 
-        return ResponseEntity.ok(CommonResponse.<RegisterResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Successfully Register!")
+        CommonResponse<RegisterResponse> response = CommonResponse.<RegisterResponse>builder()
                 .data(registerResponse)
-                .build());
+                .build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/register-admin")
     public ResponseEntity<CommonResponse<RegisterResponse>> registerAdmin(@RequestBody RegisterRequest request) {
         RegisterResponse registerResponse = authService.registerAdmin(request);
 
-        return ResponseEntity.ok(CommonResponse.<RegisterResponse>builder()
-                .statusCode(HttpStatus.OK.value())
-                .message("Successfully Register!")
+        CommonResponse<RegisterResponse> response = CommonResponse.<RegisterResponse>builder()
                 .data(registerResponse)
-                .build());
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/login")
     public ResponseEntity<CommonResponse<AuthenticationResponse>> register(@RequestBody AuthenticationRequest request) {
         AuthenticationResponse userLogin = authService.login(request);
 
-       return ResponseEntity.ok(CommonResponse.<AuthenticationResponse>builder()
-                       .statusCode(HttpStatus.OK.value())
-                       .message("Successfully Login!")
-                       .data(userLogin)
-               .build());
+        CommonResponse<AuthenticationResponse> response = CommonResponse.<AuthenticationResponse>builder()
+                .data(userLogin)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
 }

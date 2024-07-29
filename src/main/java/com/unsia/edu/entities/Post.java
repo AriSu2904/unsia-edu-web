@@ -1,9 +1,7 @@
 package com.unsia.edu.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import com.unsia.edu.entities.constant.EApproval;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,6 +20,10 @@ import java.util.List;
 public class Post extends Auditable {
     private String title;
     private String content;
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User author;
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Material> materials;
+    private EApproval approval;
 }

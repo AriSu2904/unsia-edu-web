@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PostRequest {
+public class CommentRequest {
     @NotBlank
     private String author;
-    @Size(min = 3, message = "Title must be at least 3 characters")
-    private String title;
+    @NotBlank
+    @Size(min = 1, message = "Content must be at least 1 characters")
     private String content;
 }

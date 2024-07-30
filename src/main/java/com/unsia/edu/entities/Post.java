@@ -25,6 +25,8 @@ public class Post extends Auditable {
     private User author;
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Material> materials;
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
     @Enumerated(EnumType.STRING)
     private EApproval approval;
 }

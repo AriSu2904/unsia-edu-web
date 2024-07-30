@@ -17,5 +17,6 @@ public class PostResponse {
     private String title;
     private String content;
     private List<FileResponse> materials;
+    private List<CommentResponse> comments;
     private String approval;
 }

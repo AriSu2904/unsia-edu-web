@@ -51,7 +51,11 @@ public class EntityCredentialServiceImpl implements EntityCredentialService {
         }
     }
 
-
+    @Override
+    public EntityCredential extractByPrincipal() {
+        return (EntityCredential)
+                SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
 }
 
 

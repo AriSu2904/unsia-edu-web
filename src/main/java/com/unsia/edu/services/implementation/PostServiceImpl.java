@@ -1,18 +1,16 @@
 package com.unsia.edu.services.implementation;
 
-import com.unsia.edu.entities.Material;
-import com.unsia.edu.entities.Post;
-import com.unsia.edu.entities.User;
+import com.unsia.edu.entities.*;
 import com.unsia.edu.entities.constant.EApproval;
 import com.unsia.edu.entities.constant.ERole;
+import com.unsia.edu.models.request.CommentRequest;
 import com.unsia.edu.models.request.PostRequest;
+import com.unsia.edu.models.response.CommentResponse;
 import com.unsia.edu.models.response.FileResponse;
 import com.unsia.edu.models.response.PostResponse;
 import com.unsia.edu.repositories.PostRepository;
-import com.unsia.edu.services.EntityCredentialService;
-import com.unsia.edu.services.MaterialService;
-import com.unsia.edu.services.PostService;
-import com.unsia.edu.services.UserService;
+import com.unsia.edu.services.*;
+import com.unsia.edu.utils.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,9 +32,13 @@ public class PostServiceImpl implements PostService {
     private final UserService userService;
     private final MaterialService materialService;
     private final EntityCredentialService credentialService;
+    private final CommentService commentService;
+    private final ValidationUtil validationUtil;
 
     @Override
     public PostResponse create(PostRequest post, List<MultipartFile> multipartFiles) {
+        validationUtil.validate(post);
+
         UserDetails details = userDetails.loadUserByUsername(post.getAuthor());
         User user = userService.getUserByEmail(details.getUsername());
 
@@ -79,7 +81,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<PostResponse> getPosts(EApproval approval) {
-        if(approval == EApproval.APPROVAL_PENDING) {
+        if (approval == EApproval.APPROVAL_PENDING) {
             credentialService.isValidAuthority(ERole.ROLE_ADMIN);
         }
 
@@ -88,6 +90,8 @@ public class PostServiceImpl implements PostService {
 
         for (Post post : listOfPosts) {
             List<FileResponse> learningsMaterial = getLearningsMaterial(post);
+            List<CommentResponse> comments = getComments(post);
+
 
             listPostResponse.add(PostResponse.builder()
                     .id(post.getId())
@@ -96,6 +100,7 @@ public class PostServiceImpl implements PostService {
                     .content(post.getContent())
                     .approval(post.getApproval().name())
                     .materials(learningsMaterial)
+                    .comments(comments)
                     .build());
         }
 
@@ -106,6 +111,7 @@ public class PostServiceImpl implements PostService {
     public PostResponse getPost(String id) {
         Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found"));
         List<FileResponse> learningsMaterial = getLearningsMaterial(post);
+        List<CommentResponse> comments = getComments(post);
 
         return PostResponse.builder()
                 .id(post.getId())
@@ -114,6 +120,7 @@ public class PostServiceImpl implements PostService {
                 .content(post.getContent())
                 .approval(post.getApproval().name())
                 .materials(learningsMaterial)
+                .comments(comments)
                 .build();
     }
 
@@ -141,6 +148,31 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
+    @Override
+    public CommentResponse postComment(String postId, CommentRequest comment) {
+        validationUtil.validate(comment);
+
+        EntityCredential credentials = credentialService.extractByPrincipal();
+        User user = userService.getUserByEmail(credentials.getEmail());
+
+        Post post = postRepository.findById(postId).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+
+        Comment newComment = Comment.builder()
+                .content(comment.getContent())
+                .author(user)
+                .post(post)
+                .build();
+
+        Comment savedComment = commentService.postComment(newComment);
+
+        return CommentResponse.builder()
+                .commentId(savedComment.getId())
+                .content(savedComment.getContent())
+                .author(savedComment.getAuthor().getEmail())
+                .build();
+    }
+
     private List<FileResponse> getLearningsMaterial(Post post) {
         List<Material> materialPost = materialService.findByPostId(post.getId());
         List<FileResponse> listMaterials = new ArrayList<>();
@@ -155,6 +187,22 @@ public class PostServiceImpl implements PostService {
         }
 
         return listMaterials;
+    }
+
+    private List<CommentResponse> getComments(Post post) {
+        List<Comment> commentPost = commentService.getComments(post.getId());
+        List<CommentResponse> listComments = new ArrayList<>();
+
+        for (Comment comment : commentPost) {
+            CommentResponse commentResponse = CommentResponse.builder()
+                    .commentId(comment.getId())
+                    .content(comment.getContent())
+                    .author(comment.getAuthor().getEmail())
+                    .build();
+            listComments.add(commentResponse);
+        }
+
+        return listComments;
     }
 
 }

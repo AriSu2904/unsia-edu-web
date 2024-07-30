@@ -1,6 +1,6 @@
 package com.unsia.edu.entities.constant;
 
 public enum EApproval {
-    PENDING,
-    APPROVED
+    APPROVAL_PENDING,
+    APPROVAL_SUCCESS,
 }

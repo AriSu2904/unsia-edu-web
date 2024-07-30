@@ -48,10 +48,10 @@ public class AuthServiceImpl implements AuthService {
                    .credential(userCredential)
                    .build();
 
-           userService.createUser(user);
+           User createdUser = userService.createUser(user);
 
            return RegisterResponse.builder()
-                   .email(request.getEmail())
+                   .email(createdUser.getEmail())
                    .build();
        }catch (DataIntegrityViolationException e) {
            throw new ResponseStatusException(HttpStatus.CONFLICT, "email already registered!");       }

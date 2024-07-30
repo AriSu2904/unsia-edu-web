@@ -5,7 +5,6 @@ import com.unsia.edu.services.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,11 +28,11 @@ public class FileServiceImpl implements FileService {
     public File create(MultipartFile multipartFile) {
         log.info("incoming file {}", multipartFile.getContentType());
 
-        if(multipartFile.isEmpty()) {
+        if (multipartFile.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File cannot be empty");
         }
 
-        if(!List.of("application/pdf", "image/jpg", "image/png").contains(multipartFile.getContentType())) {
+        if (isSupportedContentType(multipartFile.getContentType())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File type is not supported");
         }
 
@@ -51,24 +50,19 @@ public class FileServiceImpl implements FileService {
                     .size(multipartFile.getSize())
                     .contentType(multipartFile.getContentType())
                     .build();
-        }catch (IOException | RuntimeException e) {
+        } catch (IOException | RuntimeException e) {
             log.info("error createFile {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save file");
         }
     }
 
-    @Override
-    public List<File> createBulks(List<MultipartFile> multipartFiles) {
-        return List.of();
-    }
-
-    @Override
-    public Resource get(String path) {
-        return null;
-    }
-
-    @Override
-    public String delete(String path) {
-        return "";
+    private Boolean isSupportedContentType(String contentType) {
+        return !List.of(
+                        "application/pdf",
+                        "image/jpg", "image/png", "image/jpeg", "image/gif", "video/mp4",
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        "text/csv", "text/plain", "audio/mp4")
+                .contains(contentType);
     }
 }

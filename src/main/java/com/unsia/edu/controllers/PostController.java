@@ -1,5 +1,6 @@
 package com.unsia.edu.controllers;
 
+import com.unsia.edu.entities.constant.EApproval;
 import com.unsia.edu.models.common.CommonResponse;
 import com.unsia.edu.models.request.PostRequest;
 import com.unsia.edu.models.response.PostResponse;
@@ -32,4 +33,46 @@ public class PostController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(commonResponse);
     }
+
+    @GetMapping(produces = { MediaType.APPLICATION_JSON_VALUE })
+    public ResponseEntity<?> getPosts(@RequestParam("status") String status) {
+        EApproval approval = null;
+        
+        if(status.equalsIgnoreCase("PUBLISHED")) {
+            approval = EApproval.APPROVAL_SUCCESS;
+        } else if (status.equalsIgnoreCase("PENDING")) {
+            approval = EApproval.APPROVAL_PENDING;
+        }
+
+        List<PostResponse> responses = postService.getPosts(approval);
+
+        CommonResponse<Object> commonResponse = CommonResponse.builder()
+                .data(responses)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(commonResponse);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getPost(@PathVariable String id) {
+        PostResponse response = postService.getPost(id);
+
+        CommonResponse<Object> commonResponse = CommonResponse.builder()
+                .data(response)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(commonResponse);
+    }
+
+    @PostMapping("/approve/{id}")
+    public ResponseEntity<?> approvePost(@PathVariable String id) {
+        PostResponse response = postService.approvePost(id);
+
+        CommonResponse<Object> commonResponse = CommonResponse.builder()
+                .data(response)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.OK).body(commonResponse);
+    }
+
 }

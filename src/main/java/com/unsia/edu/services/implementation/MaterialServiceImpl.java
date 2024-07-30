@@ -11,12 +11,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class MaterialServiceImpl implements MaterialService {
 
     private final FileService fileService;
+    private final MaterialRepository materialRepository;
 
     @Override
     public Material create(Post post, MultipartFile multipartFile) {
@@ -29,5 +32,10 @@ public class MaterialServiceImpl implements MaterialService {
                 .size(file.getSize())
                 .post(post)
                 .build();
+    }
+
+    @Override
+    public List<Material> findByPostId(String postId) {
+        return materialRepository.findMaterialByPostId(postId);
     }
 }

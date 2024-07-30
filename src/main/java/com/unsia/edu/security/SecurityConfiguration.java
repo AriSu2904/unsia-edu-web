@@ -28,6 +28,7 @@ public class SecurityConfiguration {
                         .authenticationEntryPoint(authEntryPoint)
                         .accessDeniedHandler(customAccessDenied))
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/posts/published").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

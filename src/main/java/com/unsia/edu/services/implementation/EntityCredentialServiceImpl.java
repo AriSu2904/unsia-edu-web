@@ -4,12 +4,13 @@ import com.unsia.edu.entities.EntityCredential;
 import com.unsia.edu.entities.constant.ERole;
 import com.unsia.edu.repositories.EntityCredentialRepository;
 import com.unsia.edu.services.EntityCredentialService;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +39,19 @@ public class EntityCredentialServiceImpl implements EntityCredentialService {
     public EntityCredential findByEmail(String email) {
         return entityCredentialRepository.findByEmail(email).orElse(null);
     }
+
+    @Override
+    public void isValidAuthority(ERole role) {
+        EntityCredential credential = (EntityCredential)
+                    SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(credential.getRole() != role) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You don't have permission to access this resource");
+        }
+    }
+
+
 }
 
 

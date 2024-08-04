@@ -8,6 +8,7 @@ import com.unsia.edu.services.FileService;
 import com.unsia.edu.services.MaterialService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,5 +38,16 @@ public class MaterialServiceImpl implements MaterialService {
     @Override
     public List<Material> findByPostId(String postId) {
         return materialRepository.findMaterialByPostId(postId);
+    }
+
+    @Override
+    public Material findById(String id) {
+        return materialRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Resource loadImage(String id) {
+        Material material = findById(id);
+        return fileService.get(material.getPath());
     }
 }

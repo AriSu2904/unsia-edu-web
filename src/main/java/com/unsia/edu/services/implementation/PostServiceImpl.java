@@ -10,11 +10,13 @@ import com.unsia.edu.models.response.FileResponse;
 import com.unsia.edu.models.response.PostResponse;
 import com.unsia.edu.repositories.PostRepository;
 import com.unsia.edu.services.*;
+import com.unsia.edu.utils.HelperUtil;
 import com.unsia.edu.utils.ValidationUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,10 +27,10 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional(rollbackOn = Exception.class)
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
-    private final UserDetailsImpl userDetails;
     private final UserService userService;
     private final MaterialService materialService;
     private final EntityCredentialService credentialService;
@@ -39,14 +41,13 @@ public class PostServiceImpl implements PostService {
     public PostResponse create(PostRequest post, List<MultipartFile> multipartFiles) {
         validationUtil.validate(post);
 
-        UserDetails details = userDetails.loadUserByUsername(post.getAuthor());
-        User user = userService.getUserByEmail(details.getUsername());
+        EntityCredential entityCredential = credentialService.extractByPrincipal();
+        User user = userService.getUserByEmail(entityCredential.getEmail());
 
         Post newPost = Post.builder()
                 .author(user)
                 .title(post.getTitle())
                 .content(post.getContent())
-                .author(user)
                 .approval(EApproval.APPROVAL_PENDING)
                 .build();
 
@@ -64,7 +65,7 @@ public class PostServiceImpl implements PostService {
             FileResponse fileResponse = FileResponse.builder()
                     .id(material.getId())
                     .filename(material.getName())
-                    .url(material.getPath())
+                    .url("/api/posts/images/" + material.getId())
                     .build();
             fileResponses.add(fileResponse);
         }
@@ -73,29 +74,45 @@ public class PostServiceImpl implements PostService {
                 .id(newPost.getId())
                 .title(newPost.getTitle())
                 .content(newPost.getContent())
-                .author(newPost.getAuthor().getEmail())
+                .author(HelperUtil.extractFullName(user.getFirstName(), user.getLastName()))
                 .approval(newPost.getApproval().name())
                 .materials(fileResponses)
                 .build();
     }
 
     @Override
-    public List<PostResponse> getPosts(EApproval approval) {
-        if (approval == EApproval.APPROVAL_PENDING) {
-            credentialService.isValidAuthority(ERole.ROLE_ADMIN);
-        }
+    public List<PostResponse> getPendingPosts() {
+        EntityCredential credential = credentialService.extractByPrincipal();
 
-        List<Post> listOfPosts = postRepository.findAllByApproval(approval);
+        List<Post> listOfPosts;
         List<PostResponse> listPostResponse = new ArrayList<>();
 
+        if(credential.getRole().equals(ERole.ROLE_USER)) {
+            User user = userService.getUserByEmail(credential.getEmail());
+            listOfPosts = postRepository.findAllByAuthorAndApproval(user, EApproval.APPROVAL_PENDING);
+        }else {
+           listOfPosts = postRepository.findAllByApproval(EApproval.APPROVAL_PENDING);
+        }
+
+        return generatePostResponse(listOfPosts, listPostResponse);
+    }
+
+    @Override
+    public List<PostResponse> getPublishedPost() {
+        List<Post> listOfPosts = postRepository.findAllByApproval(EApproval.APPROVAL_SUCCESS);
+        List<PostResponse> listPostResponse = new ArrayList<>();
+
+        return generatePostResponse(listOfPosts, listPostResponse);
+    }
+
+    private List<PostResponse> generatePostResponse(List<Post> listOfPosts, List<PostResponse> listPostResponse) {
         for (Post post : listOfPosts) {
             List<FileResponse> learningsMaterial = getLearningsMaterial(post);
             List<CommentResponse> comments = getComments(post);
 
-
             listPostResponse.add(PostResponse.builder()
                     .id(post.getId())
-                    .author(post.getAuthor().getEmail())
+                    .author(HelperUtil.extractFullName(post.getAuthor().getFirstName(), post.getAuthor().getLastName()))
                     .title(post.getTitle())
                     .content(post.getContent())
                     .approval(post.getApproval().name())
@@ -115,7 +132,7 @@ public class PostServiceImpl implements PostService {
 
         return PostResponse.builder()
                 .id(post.getId())
-                .author(post.getAuthor().getEmail())
+                .author(HelperUtil.extractFullName(post.getAuthor().getFirstName(), post.getAuthor().getLastName()))
                 .title(post.getTitle())
                 .content(post.getContent())
                 .approval(post.getApproval().name())
@@ -140,7 +157,7 @@ public class PostServiceImpl implements PostService {
 
         return PostResponse.builder()
                 .id(approvedPost.getId())
-                .author(approvedPost.getAuthor().getEmail())
+                .author(HelperUtil.extractFullName(approvedPost.getAuthor().getFirstName(), approvedPost.getAuthor().getLastName()))
                 .title(approvedPost.getTitle())
                 .content(approvedPost.getContent())
                 .approval(approvedPost.getApproval().name())
@@ -153,6 +170,7 @@ public class PostServiceImpl implements PostService {
         validationUtil.validate(comment);
 
         EntityCredential credentials = credentialService.extractByPrincipal();
+
         User user = userService.getUserByEmail(credentials.getEmail());
 
         Post post = postRepository.findById(postId).orElseThrow(
@@ -169,8 +187,13 @@ public class PostServiceImpl implements PostService {
         return CommentResponse.builder()
                 .commentId(savedComment.getId())
                 .content(savedComment.getContent())
-                .author(savedComment.getAuthor().getEmail())
+                .author(HelperUtil.extractFullName(user.getFirstName(), user.getLastName()))
                 .build();
+    }
+
+    @Override
+    public Resource loadPostMaterial(String materialId) {
+        return materialService.loadImage(materialId);
     }
 
     private List<FileResponse> getLearningsMaterial(Post post) {
@@ -181,7 +204,7 @@ public class PostServiceImpl implements PostService {
             FileResponse fileResponse = FileResponse.builder()
                     .id(material.getId())
                     .filename(material.getName())
-                    .url(material.getPath())
+                    .url("/api/posts/images/" + material.getId())
                     .build();
             listMaterials.add(fileResponse);
         }
@@ -197,7 +220,7 @@ public class PostServiceImpl implements PostService {
             CommentResponse commentResponse = CommentResponse.builder()
                     .commentId(comment.getId())
                     .content(comment.getContent())
-                    .author(comment.getAuthor().getEmail())
+                    .author(HelperUtil.extractFullName(comment.getAuthor().getFirstName(), comment.getAuthor().getLastName()))
                     .build();
             listComments.add(commentResponse);
         }

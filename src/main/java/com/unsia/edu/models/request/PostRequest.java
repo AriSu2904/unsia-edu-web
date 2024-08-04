@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PostRequest {
-    @NotBlank
-    private String author;
     @Size(min = 3, message = "Title must be at least 3 characters")
     private String title;
     private String content;

@@ -5,12 +5,15 @@ import com.unsia.edu.services.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,6 +56,17 @@ public class FileServiceImpl implements FileService {
         } catch (IOException | RuntimeException e) {
             log.info("error createFile {}", e.getMessage());
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save file");
+        }
+    }
+
+    @Override
+    public Resource get(String path) {
+        Path filePath = Paths.get(path);
+        try {
+            return new UrlResource(filePath.toUri());
+        } catch (MalformedURLException e) {
+            log.error("error getFile");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "terjadi kegagalan server");
         }
     }
 

@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CommentRequest {
     @NotBlank
-    private String author;
-    @NotBlank
     @Size(min = 1, message = "Content must be at least 1 characters")
     private String content;
 }

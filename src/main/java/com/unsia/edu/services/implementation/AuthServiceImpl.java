@@ -10,7 +10,9 @@ import com.unsia.edu.models.response.AuthenticationResponse;
 import com.unsia.edu.models.response.RegisterResponse;
 import com.unsia.edu.services.*;
 import jakarta.transaction.Transactional;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,6 +25,7 @@ import com.unsia.edu.utils.ValidationUtil;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(rollbackOn = Exception.class)
 public class AuthServiceImpl implements AuthService {
     private final EntityCredentialService entityCredentialService;
@@ -36,48 +39,53 @@ public class AuthServiceImpl implements AuthService {
     public RegisterResponse registerUser(RegisterRequest request) {
         validationUtil.validate(request);
 
-       try {
-           EntityCredential userCredential = entityCredentialService
-                   .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_USER);
+        try {
+            EntityCredential userCredential = entityCredentialService
+                    .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_USER);
 
-           User user = User.builder()
-                   .email(userCredential.getEmail())
-                   .firstName(request.getFirstName())
-                   .lastName(request.getLastName())
-                   .phoneNumber(request.getPhoneNumber())
-                   .credential(userCredential)
-                   .build();
+            User user = User.builder()
+                    .email(userCredential.getEmail())
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .phoneNumber(request.getPhoneNumber())
+                    .credential(userCredential)
+                    .build();
 
-           User createdUser = userService.createUser(user);
+            User createdUser = userService.createUser(user);
 
-           return RegisterResponse.builder()
-                   .email(createdUser.getEmail())
-                   .build();
-       }catch (DataIntegrityViolationException e) {
-           throw new ResponseStatusException(HttpStatus.CONFLICT, "email already registered!");       }
+            return RegisterResponse.builder()
+                    .email(createdUser.getEmail())
+                    .build();
+        } catch (Exception error) {
+            if (error.getCause() instanceof ConstraintViolationException) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email or Phone Number already registered!");
+            } else {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while processing your request.!");
+            }
+        }
     }
 
     @Override
     public RegisterResponse registerAdmin(RegisterRequest request) {
         validationUtil.validate(request);
 
-       try {
-           EntityCredential userCredential = entityCredentialService
-                   .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_ADMIN);
+        try {
+            EntityCredential userCredential = entityCredentialService
+                    .createCredential(request.getEmail(), request.getPassword(), ERole.ROLE_ADMIN);
 
-           Admin newAdmin = Admin.builder()
-                   .email(userCredential.getEmail())
-                   .credential(userCredential)
-                   .build();
+            Admin newAdmin = Admin.builder()
+                    .email(userCredential.getEmail())
+                    .credential(userCredential)
+                    .build();
 
-           adminService.createAdmin(newAdmin);
+            adminService.createAdmin(newAdmin);
 
-           return RegisterResponse.builder()
-                   .email(request.getEmail())
-                   .build();
-       }catch (DataIntegrityViolationException exception) {
-           throw new ResponseStatusException(HttpStatus.CONFLICT, "email already registered!");
-       }
+            return RegisterResponse.builder()
+                    .email(request.getEmail())
+                    .build();
+        } catch (DataIntegrityViolationException exception) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "email already registered!");
+        }
     }
 
     @Override
@@ -100,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
                     .token(token)
                     .role(credential.getRole().name())
                     .build();
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Incorrect Email or Password!");
         }
     }
